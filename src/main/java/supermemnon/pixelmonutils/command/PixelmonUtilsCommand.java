@@ -42,8 +42,11 @@ public class PixelmonUtilsCommand {
     private static LiteralArgumentBuilder<CommandSource> appendRemoveItem(LiteralArgumentBuilder<CommandSource> command) {
         return command.then(Commands.literal("remove")
                 .then(Commands.literal("requireditem")
-                    .executes(context -> runRemoveRequiredItem(context.getSource(), IntegerArgumentType.getInteger(context, "index"))
-                    )
+                        .then(Commands.argument("index", IntegerArgumentType.integer())
+                                .executes(
+                                        context -> runRemoveRequiredItem(context.getSource(), IntegerArgumentType.getInteger(context, "index"))
+                                )
+                        )
                 )
         );
     }
