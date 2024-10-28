@@ -5,6 +5,7 @@ import net.minecraft.world.World;
 import net.minecraft.world.storage.WorldSavedData;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.nbt.ListNBT;
+import supermemnon.pixelmonutils.PixelmonUtils;
 import supermemnon.pixelmonutils.util.FormattingHelper;
 
 import java.util.*;
@@ -33,6 +34,11 @@ public class PixelUtilsBlockData extends WorldSavedData {
     // Add custom data for a specific block position
     public void setCustomData(BlockPos pos, String data) {
         blockDataMap.put(pos, data);
+        setDirty(); // Mark this data as dirty to ensure it saves
+    }
+
+    public void removeCustomData(BlockPos pos) {
+        blockDataMap.remove(pos);
         setDirty(); // Mark this data as dirty to ensure it saves
     }
 
@@ -154,14 +160,20 @@ public class PixelUtilsBlockData extends WorldSavedData {
             PixelUtilsBlockData savedData = PixelUtilsBlockData.get(world);
             String data = savedData.getCustomData(pos);
             if (data.equals("")) {
+                PixelmonUtils.getLOGGER().debug("Empty List");
                 return false;
             }
             ArrayList<String> commandList = new ArrayList<> (Arrays.asList(data.split(separatorString)));
-            if ((index + 1) < commandList.size()) {
+            if (commandList.size() < (index + 1)) {
                 return false;
             }
             commandList.remove(index);
-            savedData.setCustomData(pos, String.join(separatorString, commandList));
+            if (commandList.size() < 1) {
+                savedData.removeCustomData(pos);
+            }
+            else {
+                savedData.setCustomData(pos, String.join(separatorString, commandList));
+            }
             return true;
         }
 
