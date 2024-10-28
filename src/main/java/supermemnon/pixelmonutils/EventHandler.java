@@ -1,10 +1,17 @@
 package supermemnon.pixelmonutils;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.pixelmonmod.pixelmon.api.events.PokeLootEvent;
 import com.pixelmonmod.pixelmon.api.events.npc.NPCEvent;
+import com.pixelmonmod.pixelmon.entities.pixelmon.StatueEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.util.text.TextComponent;
+import net.minecraft.util.text.TextComponentUtils;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.RegisterCommandsEvent;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -12,6 +19,8 @@ import supermemnon.pixelmonutils.command.PixelmonUtilsCommand;
 import supermemnon.pixelmonutils.util.NBTHelper;
 import supermemnon.pixelmonutils.util.InventoryUtils;
 import supermemnon.pixelmonutils.util.PixelmonModUtils;
+
+import java.util.UUID;
 
 
 //@Mod.EventBusSubscriber(modid = "pixelmonperms")
@@ -23,6 +32,16 @@ public class EventHandler {
         @SubscribeEvent
         public static void registerCommands(RegisterCommandsEvent event) {
             PixelmonUtilsCommand.register(event.getDispatcher());
+        }
+
+        @SubscribeEvent
+        public static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
+            if (event.getTarget() instanceof StatueEntity) {
+                event.getPlayer().getServer().sendMessage(new StringTextComponent("Interaction Event: Statue!!"), event.getPlayer().getUUID());
+            }
+            else {
+                event.getPlayer().getServer().sendMessage(new StringTextComponent("Interaction Event: Other!!"), event.getPlayer().getUUID());
+            }
         }
 
     }
@@ -42,6 +61,15 @@ public class EventHandler {
 //    }
 
     public static class ModEvents {
+        @SubscribeEvent(priority = EventPriority.LOWEST)
+        public static void onPokeLootClaim(PokeLootEvent.Claim event) throws CommandSyntaxException {
+            if (event.isCanceled()) {
+                event.player.getServer().sendMessage(new StringTextComponent("PokeLootEvent is cancelled!"), event.player.getUUID());
+            }
+            else {
+                event.player.getServer().sendMessage(new StringTextComponent("PokeLootEvent is normal!"), event.player.getUUID());
+            }
+        }
         @SubscribeEvent(priority = EventPriority.HIGHEST)
         public static void onNPCBattleEvent(NPCEvent.StartBattle event) throws CommandSyntaxException {
             if (!NBTHelper.hasRequiredItem(event.npc)) {

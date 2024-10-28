@@ -28,7 +28,7 @@ public class PixelmonUtils
 
     public PixelmonUtils() {
         FMLJavaModLoadingContext.get().getModEventBus().addListener(this::setup);
-        MinecraftForge.EVENT_BUS.register(this);
+//        MinecraftForge.EVENT_BUS.register(this);
         Pixelmon.EVENT_BUS.register(EventHandler.ModEvents.class);
     }
 
