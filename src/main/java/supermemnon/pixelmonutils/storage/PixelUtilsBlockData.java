@@ -5,6 +5,7 @@ import net.minecraft.world.World;
 import net.minecraft.world.storage.WorldSavedData;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.nbt.ListNBT;
+import supermemnon.pixelmonutils.util.FormattingHelper;
 
 import java.util.*;
 
@@ -77,6 +78,12 @@ public class PixelUtilsBlockData extends WorldSavedData {
 
     public static class CustomDataManager {
         public static final String separatorString = "///";
+
+        public static boolean hasCommandAtBlock(World world, BlockPos pos) {
+            PixelUtilsBlockData savedData = PixelUtilsBlockData.get(world);
+            return savedData.hasCustomData(pos);
+        }
+
         public static String getCommandAtIndex(String commands, int index) {
             List<String> commandList = Arrays.asList(commands.split(separatorString));
             if (commandList.size() < (index + 1)) {
@@ -88,7 +95,7 @@ public class PixelUtilsBlockData extends WorldSavedData {
         }
 
         public static String appendCommandToString(String commands, String commandString) {
-            List<String> commandList = Arrays.asList(commands.split(separatorString));
+            ArrayList<String> commandList = new ArrayList<> (Arrays.asList(commands.split(separatorString)));
             commandList.add(commandString);
             return String.join(separatorString, commandList);
         }
@@ -112,11 +119,23 @@ public class PixelUtilsBlockData extends WorldSavedData {
                 return data;
             }
             else {
-                List<String> commandList = Arrays.asList(data.split(separatorString));
-                for (int i = 0; i < commandList.size(); i++) {
-                    commandList.set(i, String.format("\"%s: %s\"", i, commandList.get(i)));
-                }
-                return String.join(",\n", commandList);
+                return FormattingHelper.formatIndexedStringList(data.split(separatorString));
+//                List<String> commandList = Arrays.asList(data.split(separatorString));
+                //                for (int i = 0; i < commandList.size(); i++) {
+//                    commandList.set(i, String.format("\"%s: %s\"", i, commandList.get(i)));
+//                }
+//                return String.join(",\n", commandList);
+            }
+        }
+
+        public static String[] getCommandListAtBlock(World world, BlockPos pos) {
+            PixelUtilsBlockData savedData = PixelUtilsBlockData.get(world);
+            String data = savedData.getCustomData(pos);
+            if (data.equals("")) {
+                return new String[0];
+            }
+            else {
+                return data.split(separatorString);
             }
         }
 
@@ -137,11 +156,10 @@ public class PixelUtilsBlockData extends WorldSavedData {
             if (data.equals("")) {
                 return false;
             }
-            List<String> commandList = Arrays.asList(data.split(separatorString));
+            ArrayList<String> commandList = new ArrayList<> (Arrays.asList(data.split(separatorString)));
             if ((index + 1) < commandList.size()) {
                 return false;
             }
-
             commandList.remove(index);
             savedData.setCustomData(pos, String.join(separatorString, commandList));
             return true;

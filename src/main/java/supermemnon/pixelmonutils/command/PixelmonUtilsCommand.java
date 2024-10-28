@@ -6,6 +6,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.pixelmonmod.pixelmon.blocks.tileentity.PokeChestTileEntity;
 import com.pixelmonmod.pixelmon.entities.npcs.NPCEntity;
 import net.minecraft.command.CommandSource;
 import net.minecraft.command.Commands;
@@ -86,31 +87,42 @@ public class PixelmonUtilsCommand {
 
     private static int runSetPokeLootCommand(CommandSource source, BlockPos pos, String commandString) throws CommandSyntaxException {
         World world = source.getLevel();
+        if (!(world.getBlockEntity(pos) instanceof PokeChestTileEntity)) {
+            source.sendFailure(new StringTextComponent(String.format("Target block is not a PokeChest!", pos.toString())));
+            return 0;
+        }
         boolean didOverwrite = PixelUtilsBlockData.CustomDataManager.setCommandAtBlock(world, pos, commandString);
         source.sendSuccess(new StringTextComponent("Added interact command: " + commandString), true);
         return 1;
     }
     private static int runGetPokeLootCommand(CommandSource source, BlockPos pos) throws CommandSyntaxException {
         World world = source.getLevel();
+        if (!(world.getBlockEntity(pos) instanceof PokeChestTileEntity)) {
+            source.sendFailure(new StringTextComponent(String.format("Target block is not a PokeChest!", pos.toString())));
+            return 0;
+        }
         String list = PixelUtilsBlockData.CustomDataManager.getBlockCommandListFormatted(world, pos);
         if (list == "") {
             source.sendFailure(new StringTextComponent(String.format("Invalid or empty list at %s.", pos.toString())));
             return 0;
         }
-        source.sendSuccess(new StringTextComponent(String.format("Commands at %s: [\n%s\n]", pos.toString(), list)), true);
+        source.sendSuccess(new StringTextComponent(String.format("Commands at %s: [\n%s]", pos.toString(), list)), true);
         return 1;
     }
 
     private static int runRemovePokeLootCommand(CommandSource source, BlockPos pos,  int index) throws CommandSyntaxException {
 //        PixelUtilsBlockData.CustomDataManager.
         World world = source.getLevel();
+        if (!(world.getBlockEntity(pos) instanceof PokeChestTileEntity)) {
+            source.sendFailure(new StringTextComponent(String.format("Target block is not a PokeChest!", pos.toString())));
+            return 0;
+        }
         boolean success = PixelUtilsBlockData.CustomDataManager.removeCommandAtBlock(world, pos, index);
         if (!success) {
             source.sendFailure(new StringTextComponent("Invalid index or empty command list!"));
             return 0;
         }
-        String text = String.format("Block Pos of %s, Index of %s", pos.toString(), String.valueOf(index));
-        source.sendSuccess(new StringTextComponent(text), true);
+        source.sendSuccess(new StringTextComponent(String.format("Removed Command at Block %s at Index %s", pos.toString(), String.valueOf(index))), true);
         return 1;
     }
 

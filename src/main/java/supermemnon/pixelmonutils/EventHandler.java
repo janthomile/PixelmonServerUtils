@@ -5,10 +5,12 @@ import com.pixelmonmod.pixelmon.api.events.PokeLootEvent;
 import com.pixelmonmod.pixelmon.api.events.npc.NPCEvent;
 import com.pixelmonmod.pixelmon.entities.pixelmon.StatueEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextComponent;
 import net.minecraft.util.text.TextComponentUtils;
+import net.minecraft.world.World;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
@@ -16,6 +18,8 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import supermemnon.pixelmonutils.command.PixelmonUtilsCommand;
+import supermemnon.pixelmonutils.storage.PixelUtilsBlockData;
+import supermemnon.pixelmonutils.util.CommandUtils;
 import supermemnon.pixelmonutils.util.NBTHelper;
 import supermemnon.pixelmonutils.util.InventoryUtils;
 import supermemnon.pixelmonutils.util.PixelmonModUtils;
@@ -37,38 +41,24 @@ public class EventHandler {
         @SubscribeEvent
         public static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
             if (event.getTarget() instanceof StatueEntity) {
-                event.getPlayer().getServer().sendMessage(new StringTextComponent("Interaction Event: Statue!!"), event.getPlayer().getUUID());
+//                event.getPlayer().getServer().sendMessage(new StringTextComponent("Interaction Event: Statue!!"), event.getPlayer().getUUID());
             }
             else {
-                event.getPlayer().getServer().sendMessage(new StringTextComponent("Interaction Event: Other!!"), event.getPlayer().getUUID());
+//                event.getPlayer().getServer().sendMessage(new StringTextComponent("Interaction Event: Other!!"), event.getPlayer().getUUID());
             }
         }
 
     }
 
-    //    @SubscribeEvent(priority = EventPriority.HIGHEST)
-//    public static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
-//        PixelmonPerms.getLOGGER().log(Level.INFO, "Interaction!!");
-//        if (event.getEntity() instanceof NPCEntity && InteractionHandler.hasRequiredPermission(event.getEntity())) {
-//            String perm = InteractionHandler.getRequiredPermission(event.getEntity());
-//            PixelmonPerms.getLOGGER().log(Level.INFO, "NPC Interaction!");
-//            if (!PermissionAPI.hasPermission(event.getPlayer(), perm)) {
-//                PixelmonPerms.getLOGGER().log(Level.INFO, "NPC Interaction Cancelled!");
-//                event.getPlayer().sendMessage(new StringTextComponent(InteractionHandler.getCancelMessage(event.getEntity())), null);
-//                event.setCanceled(true);
-//            }
-//        }
-//    }
-
     public static class ModEvents {
         @SubscribeEvent(priority = EventPriority.LOWEST)
         public static void onPokeLootClaim(PokeLootEvent.Claim event) throws CommandSyntaxException {
-            if (event.isCanceled()) {
-                event.player.getServer().sendMessage(new StringTextComponent("PokeLootEvent is cancelled!"), event.player.getUUID());
+            World world = event.player.getCommandSenderWorld();
+            BlockPos pos = event.chest.getBlockPos();
+            if (!PixelUtilsBlockData.CustomDataManager.hasCommandAtBlock(world, pos)) {
+                return;
             }
-            else {
-                event.player.getServer().sendMessage(new StringTextComponent("PokeLootEvent is normal!"), event.player.getUUID());
-            }
+            CommandUtils.executeCommandList(event.player.getServer(), event.player, PixelUtilsBlockData.CustomDataManager.getCommandListAtBlock(world, pos));
         }
         @SubscribeEvent(priority = EventPriority.HIGHEST)
         public static void onNPCBattleEvent(NPCEvent.StartBattle event) throws CommandSyntaxException {
