@@ -9,10 +9,59 @@ import java.util.Arrays;
 
 public class NBTHelper {
 
+    static String nbtCustomDialogueKey = "putils_dlg";
     static String nbtRequiredItemKey = "putils_item";
     static String itemListDelimiter = ",,,";
     static String altListDelimiter = "||";
     static String altListDelimiterRegex = "\\|\\|";
+    static String defaultCustomDialogue = "...";
+
+
+    public static void appendCustomDialogue(Entity entity, String message) {
+        if (!hasCustomDialogue(entity)) {
+            setCustomDialogue(entity, message);
+            return;
+        }
+        setCustomDialogue(entity,getCustomDialogue(entity).concat(altListDelimiter).concat(message));
+    }
+
+    public static void setCustomDialogue(Entity entity, String message) {
+        CompoundNBT  nbt = entity.getPersistentData();
+        nbt.putString(nbtCustomDialogueKey, message);
+    }
+
+    public static boolean hasCustomDialogue(Entity entity) {
+        CompoundNBT  nbt = entity.getPersistentData();
+        return nbt.contains(nbtCustomDialogueKey);
+    }
+    public static String[] getCustomDialogues(Entity entity) {
+        CompoundNBT  nbt = entity.getPersistentData();
+        return parseAltList(nbt.getString(nbtCustomDialogueKey));
+    }
+
+    public static String getCustomDialogue(Entity entity) {
+        if (hasCustomDialogue(entity)) {
+            CompoundNBT  nbt = entity.getPersistentData();
+            return nbt.getString(nbtCustomDialogueKey);
+        }
+        else {
+            return defaultCustomDialogue;
+        }
+    }
+
+    public static boolean removeCustomDialogue(Entity entity, int index) {
+        CompoundNBT  nbt = entity.getPersistentData();
+        if (!nbt.contains(nbtCustomDialogueKey)) {
+            return false;
+        }
+        ArrayList<String> newMessageList = new ArrayList<> (Arrays.asList(getCustomDialogues(entity)));
+        newMessageList.remove(index);
+        setCustomDialogue(entity, String.join(altListDelimiter, newMessageList));
+        if (newMessageList.size() < 1) {
+            nbt.remove(nbtCustomDialogueKey);
+        }
+        return true;
+    }
 
 
     public static String convertItemToNbt(ItemStack item) {

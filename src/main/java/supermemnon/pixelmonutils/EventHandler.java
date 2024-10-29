@@ -41,10 +41,10 @@ public class EventHandler {
         @SubscribeEvent
         public static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
             if (event.getTarget() instanceof StatueEntity) {
-//                event.getPlayer().getServer().sendMessage(new StringTextComponent("Interaction Event: Statue!!"), event.getPlayer().getUUID());
-            }
-            else {
-//                event.getPlayer().getServer().sendMessage(new StringTextComponent("Interaction Event: Other!!"), event.getPlayer().getUUID());
+                if (!NBTHelper.hasCustomDialogue(event.getTarget())) {
+                    return;
+                }
+                PixelmonModUtils.customNpcChat(event.getTarget(), (ServerPlayerEntity) event.getPlayer(), NBTHelper.getCustomDialogues(event.getTarget()));
             }
         }
 

@@ -8,6 +8,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.pixelmonmod.pixelmon.blocks.tileentity.PokeChestTileEntity;
 import com.pixelmonmod.pixelmon.entities.npcs.NPCEntity;
+import com.pixelmonmod.pixelmon.entities.pixelmon.StatueEntity;
 import net.minecraft.command.CommandSource;
 import net.minecraft.command.Commands;
 import net.minecraft.command.arguments.BlockPosArgument;
@@ -46,6 +47,12 @@ public class PixelmonUtilsCommand {
                                )
                        )
                )
+               .then(Commands.literal("dialogue")
+                       .then(Commands.argument("dialogue", StringArgumentType.greedyString())
+                               .executes(context -> runSetCustomDialogue(context.getSource(), StringArgumentType.getString(context, "dialogue"))
+                               )
+                       )
+               )
            );
     }
 
@@ -60,6 +67,9 @@ public class PixelmonUtilsCommand {
                                         context -> runGetPokeLootCommand(context.getSource(), BlockPosArgument.getOrLoadBlockPos(context, "blockpos"))
                                 )
                         )
+                )
+                .then(Commands.literal("dialogue")
+                        .executes(context -> runGetCustomDialogue(context.getSource()))
                 )
         );
     }
@@ -82,9 +92,78 @@ public class PixelmonUtilsCommand {
                                 )
                         )
                 )
+                .then(Commands.literal("dialogue")
+                        .then(Commands.argument("index", IntegerArgumentType.integer())
+                                .executes(context -> runRemoveCustomDialogue(context.getSource(), IntegerArgumentType.getInteger(context, "index"))
+                                )
+                        )
+                )
         );
     }
 
+    private static int runGetCustomDialogue(CommandSource source) throws CommandSyntaxException {
+        ServerPlayerEntity player = source.getPlayerOrException();
+        Entity lookEntity = RayTraceHelper.getEntityLookingAt(player, 8.0);
+        if (lookEntity == null) {
+            source.sendFailure(new StringTextComponent("No entity found."));
+        }
+        else if (lookEntity instanceof StatueEntity) {
+            if (!NBTHelper.hasCustomDialogue(lookEntity)) {
+                source.sendFailure(new StringTextComponent("NPC has no custom dialogue!"));
+                return 0;
+            }
+            String[] CustomDialogues = NBTHelper.getCustomDialogues(lookEntity);
+            source.sendSuccess(new StringTextComponent(String.format("Custom Dialogue:\n%s", FormattingHelper.formatIndexedStringList(CustomDialogues))), true);
+        }
+        else {
+            source.sendFailure(new StringTextComponent("Entity is not NPC!"));
+        }
+        return 1;
+    }
+
+    private static int runSetCustomDialogue(CommandSource source, String customDialogue) throws CommandSyntaxException {
+        ServerPlayerEntity player = source.getPlayerOrException();
+        Entity lookEntity = RayTraceHelper.getEntityLookingAt(player, 8.0);
+        if (lookEntity == null) {
+            source.sendFailure(new StringTextComponent("No entity found."));
+        }
+        else if (lookEntity instanceof StatueEntity) {
+            NBTHelper.appendCustomDialogue(lookEntity, customDialogue);
+            source.sendSuccess(new StringTextComponent(String.format("Added dialogue line: %s", customDialogue)), true);
+        }
+        else {
+            source.sendFailure(new StringTextComponent("Entity is not NPC!"));
+        }
+        return 1;
+    }
+
+
+
+    private static int runRemoveCustomDialogue(CommandSource source, int index) throws CommandSyntaxException {
+        ServerPlayerEntity player = source.getPlayerOrException();
+        Entity lookEntity = RayTraceHelper.getEntityLookingAt(player, 8.0);
+        if (lookEntity == null) {
+            source.sendFailure(new StringTextComponent("No entity found."));
+        }
+        else if (lookEntity instanceof StatueEntity) {
+            if (!NBTHelper.hasCustomDialogue(lookEntity)) {
+                source.sendFailure(new StringTextComponent("NPC does not have custom dialogue!!"));
+                return 0;
+            }
+            String[] messages = NBTHelper.getCustomDialogues(lookEntity);
+            if (messages.length < (index + 1)) {
+                source.sendFailure(new StringTextComponent("NPC does not have a dialogue at that index!"));
+                return 0;
+            }
+            NBTHelper.removeCustomDialogue(lookEntity, index);
+            source.sendSuccess(new StringTextComponent(String.format("Removed NPC's dialogue at index %d.", index)), true);
+        }
+        else {
+            source.sendFailure(new StringTextComponent("Entity is not NPC!"));
+        }
+        return 1;
+    }
+    
     private static int runSetPokeLootCommand(CommandSource source, BlockPos pos, String commandString) throws CommandSyntaxException {
         World world = source.getLevel();
         if (!(world.getBlockEntity(pos) instanceof PokeChestTileEntity)) {
