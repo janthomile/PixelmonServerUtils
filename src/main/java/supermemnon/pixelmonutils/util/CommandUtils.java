@@ -14,18 +14,6 @@ public class CommandUtils {
         return command;
     }
 
-//    CommandSource commandSource = new CommandSource(
-//            server, // ICommandSource: The server itself as the source
-//            new Vector3d(0, 0, 0), // Vec3d: Position (0, 0, 0) for example
-//            Vector2f.ZERO, // Vec2f: Rotation (0, 0)
-//            world, // ServerWorld: The world in which to execute the command
-//            4, // int: Permission level
-//            "CommandExecutor", // String: Name of the command source
-//            new StringTextComponent("CommandExecutor"), // ITextComponent: Display name
-//            server, // MinecraftServer: The server instance
-//            null // @Nullable Entity: No entity associated
-//    );
-
     public static CommandSource getPlayerCommandSource(MinecraftServer server, PlayerEntity player) {
         CommandSource source = new CommandSource(server,//ICommandSource
                                                         new Vector3d(player.getX(), player.getY(), player.getZ()),

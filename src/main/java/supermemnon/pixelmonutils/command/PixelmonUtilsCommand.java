@@ -6,18 +6,27 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.pixelmonmod.pixelmon.api.pokemon.Pokemon;
+import com.pixelmonmod.pixelmon.api.storage.StorageProxy;
+import com.pixelmonmod.pixelmon.battles.api.rules.teamselection.TeamSelectionRegistry;
 import com.pixelmonmod.pixelmon.blocks.tileentity.PokeChestTileEntity;
 import com.pixelmonmod.pixelmon.entities.npcs.NPCEntity;
+import com.pixelmonmod.pixelmon.entities.npcs.NPCTrainer;
 import com.pixelmonmod.pixelmon.entities.pixelmon.StatueEntity;
 import net.minecraft.command.CommandSource;
 import net.minecraft.command.Commands;
 import net.minecraft.command.arguments.BlockPosArgument;
+import net.minecraft.command.arguments.EntityArgument;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.world.World;
+import net.minecraft.world.server.ServerWorld;
+import net.minecraftforge.fml.server.ServerLifecycleHooks;
+import org.apache.logging.log4j.Level;
 import supermemnon.pixelmonutils.storage.PixelUtilsBlockData;
 import supermemnon.pixelmonutils.util.NBTHelper;
 import supermemnon.pixelmonutils.util.FormattingHelper;
@@ -29,7 +38,7 @@ public class PixelmonUtilsCommand {
         commandStructure = appendSetCommand(commandStructure);
         commandStructure = appendGetCommand(commandStructure);
         commandStructure = appendRemoveCommand(commandStructure);
-//        commandStructure = appendPokeLootCommand(commandStructure);
+        commandStructure = appendNPCBattleCommand(commandStructure);
         dispatcher.register(commandStructure);
     }
 
@@ -101,6 +110,50 @@ public class PixelmonUtilsCommand {
         );
     }
 
+    private static LiteralArgumentBuilder<CommandSource> appendNPCBattleCommand(LiteralArgumentBuilder<CommandSource> command) {
+        return command.then(Commands.literal("npcbattle")
+                .then(Commands.argument("player", EntityArgument.player())
+                        .then(Commands.argument("uuid", EntityArgument.entity())
+                                .executes(context -> runNpcBattle(context.getSource(), EntityArgument.getPlayer(context, "player"), EntityArgument.getEntity(context, "uuid")))
+                        )
+                )
+        );
+    }
+
+    private static int runNpcBattle(CommandSource source, ServerPlayerEntity playerBattler, Entity entity) throws CommandSyntaxException {
+        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+        ServerWorld world = server.overworld().getWorldServer();
+//        ServerPlayerEntity playerBattler = server.getPlayerList().getPlayerByName(playerName);
+//        UUID entityUUID = UUID.fromString(npcUUID);
+//        Entity entity = world.getEntity(entityUUID);
+        if (playerBattler == null) {
+            source.sendFailure(new StringTextComponent("No valid player found."));
+            return 0;
+        }
+        else if (entity == null) {
+            source.sendFailure(new StringTextComponent("No valid entity found."));
+            return 0;
+        }
+        else if (!(entity instanceof NPCEntity)) {
+            source.sendFailure(new StringTextComponent("Entity is not an NPC!"));
+            return 0;
+        }
+        else {
+            if (!(entity instanceof NPCTrainer)) {
+                source.sendFailure(new StringTextComponent("NPC is not a trainer!"));
+                return 0;
+            }
+            NPCTrainer trainer = (NPCTrainer) entity;
+            Pokemon startingPixelmon = StorageProxy.getParty(playerBattler).getSelectedPokemon();
+            if (startingPixelmon == null) {
+                source.sendFailure(new StringTextComponent("Trainer has no pokemon!!"));
+                return 0;
+            }
+            TeamSelectionRegistry.builder().members(trainer, playerBattler).showRules().showOpponentTeam().closeable(true).battleRules(trainer.battleRules).start();
+        }
+        return 1;
+    }
+
     private static int runGetCustomDialogue(CommandSource source) throws CommandSyntaxException {
         ServerPlayerEntity player = source.getPlayerOrException();
         Entity lookEntity = RayTraceHelper.getEntityLookingAt(player, 8.0);
@@ -136,8 +189,6 @@ public class PixelmonUtilsCommand {
         }
         return 1;
     }
-
-
 
     private static int runRemoveCustomDialogue(CommandSource source, int index) throws CommandSyntaxException {
         ServerPlayerEntity player = source.getPlayerOrException();
