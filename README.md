@@ -24,6 +24,9 @@ Base command is `/pixelmonutils` which has the subcommands `get`, `set`, `remove
 * `pokelootcommand` `[xyz]`
 * `dialogue`
 
+`npcbattle` takes a player selector and entity selector (must be an npc trainer) and lastly a true/false for whether to show the rules screen.
+Then, it prompts the player into a battle against the NPC trainer.
+
 which must be followed by a whole-number `index` (seen through the `get` subcommand) to remove an entry from any of the above lists.
 
 Command addendum:
