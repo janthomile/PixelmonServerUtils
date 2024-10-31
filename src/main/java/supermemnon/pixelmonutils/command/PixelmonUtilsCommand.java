@@ -1,10 +1,10 @@
 package supermemnon.pixelmonutils.command;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.pixelmonmod.pixelmon.api.pokemon.Pokemon;
 import com.pixelmonmod.pixelmon.api.storage.StorageProxy;
@@ -18,7 +18,6 @@ import net.minecraft.command.Commands;
 import net.minecraft.command.arguments.BlockPosArgument;
 import net.minecraft.command.arguments.EntityArgument;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.math.BlockPos;
@@ -26,7 +25,6 @@ import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.fml.server.ServerLifecycleHooks;
-import org.apache.logging.log4j.Level;
 import supermemnon.pixelmonutils.storage.PixelUtilsBlockData;
 import supermemnon.pixelmonutils.util.NBTHelper;
 import supermemnon.pixelmonutils.util.FormattingHelper;
@@ -114,13 +112,17 @@ public class PixelmonUtilsCommand {
         return command.then(Commands.literal("npcbattle")
                 .then(Commands.argument("player", EntityArgument.player())
                         .then(Commands.argument("uuid", EntityArgument.entity())
-                                .executes(context -> runNpcBattle(context.getSource(), EntityArgument.getPlayer(context, "player"), EntityArgument.getEntity(context, "uuid")))
+                                .then(Commands.argument("showscreen", BoolArgumentType.bool())
+                                        .executes(context -> runNpcBattle(context.getSource(), EntityArgument.getPlayer(context, "player"),
+                                                EntityArgument.getEntity(context, "uuid"), BoolArgumentType.getBool(context, "showscreen"))
+                                        )
+                                )
                         )
                 )
         );
     }
 
-    private static int runNpcBattle(CommandSource source, ServerPlayerEntity playerBattler, Entity entity) throws CommandSyntaxException {
+    private static int runNpcBattle(CommandSource source, ServerPlayerEntity playerBattler, Entity entity, boolean showscreen) throws CommandSyntaxException {
         MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
         ServerWorld world = server.overworld().getWorldServer();
 //        ServerPlayerEntity playerBattler = server.getPlayerList().getPlayerByName(playerName);
@@ -149,7 +151,11 @@ public class PixelmonUtilsCommand {
                 source.sendFailure(new StringTextComponent("Trainer has no pokemon!!"));
                 return 0;
             }
-            TeamSelectionRegistry.builder().members(trainer, playerBattler).showRules().showOpponentTeam().closeable(true).battleRules(trainer.battleRules).start();
+            TeamSelectionRegistry.Builder builder = TeamSelectionRegistry.builder().members(trainer, playerBattler);
+            if (showscreen) {
+                builder = builder.showRules().showOpponentTeam().closeable(true);
+            }
+            builder.battleRules(trainer.battleRules).start();
         }
         return 1;
     }
