@@ -3,19 +3,47 @@ package supermemnon.pixelmonutils.util;
 import net.minecraft.entity.Entity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.util.math.vector.Vector3d;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+
+import static net.minecraft.util.math.MathHelper.floor;
 
 public class NBTHelper {
 
     static String nbtCustomDialogueKey = "putils_dlg";
     static String nbtRequiredItemKey = "putils_item";
+    static String nbtStareLocationKey = "putils_stareplace";
     static String itemListDelimiter = ",,,";
     static String altListDelimiter = "||";
     static String altListDelimiterRegex = "\\|\\|";
     static String defaultCustomDialogue = "...";
 
+
+    public static boolean hasStarePlace(Entity entity) {
+        CompoundNBT  nbt = entity.getPersistentData();
+        return nbt.contains(nbtStareLocationKey);
+    }
+    public static Vector3d getStarePlace(Entity entity) {
+        CompoundNBT  nbt = entity.getPersistentData();
+        int[] array = nbt.getIntArray(nbtStareLocationKey);
+        return new Vector3d(array[0],array[1],array[2]);
+    }
+    public static void setStarePlace(Entity entity, Vector3d location) {
+        CompoundNBT  nbt = entity.getPersistentData();
+        int[] array = {floor(location.x), floor(location.y), floor(location.z)};
+        nbt.putIntArray(nbtStareLocationKey, array);
+    }
+
+    public static boolean removeStarePlace(Entity entity) {
+        if (!hasStarePlace(entity)) {
+            return false;
+        }
+        CompoundNBT  nbt = entity.getPersistentData();
+        nbt.remove(nbtStareLocationKey);
+        return true;
+    }
 
     public static void appendCustomDialogue(Entity entity, String message) {
         if (!hasCustomDialogue(entity)) {

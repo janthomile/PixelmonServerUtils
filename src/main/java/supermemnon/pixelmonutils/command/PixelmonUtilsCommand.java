@@ -21,11 +21,13 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.fml.server.ServerLifecycleHooks;
 import supermemnon.pixelmonutils.storage.PixelUtilsBlockData;
+import supermemnon.pixelmonutils.util.AIOverrideUtil;
 import supermemnon.pixelmonutils.util.NBTHelper;
 import supermemnon.pixelmonutils.util.FormattingHelper;
 import supermemnon.pixelmonutils.util.RayTraceHelper;
@@ -37,6 +39,7 @@ public class PixelmonUtilsCommand {
         commandStructure = appendGetCommand(commandStructure);
         commandStructure = appendRemoveCommand(commandStructure);
         commandStructure = appendNPCBattleCommand(commandStructure);
+
         dispatcher.register(commandStructure);
     }
 
@@ -60,6 +63,14 @@ public class PixelmonUtilsCommand {
                                )
                        )
                )
+               .then(Commands.literal("npcstare")
+                       .then(Commands.argument("entity", EntityArgument.entity())
+                               .then(Commands.argument("blockpos", BlockPosArgument.blockPos())
+                                       .executes(context -> runSetNpcStare(context.getSource(), EntityArgument.getEntity(context, "entity"),BlockPosArgument.getOrLoadBlockPos(context, "blockpos"))
+                                       )
+                               )
+                       )
+               )
            );
     }
 
@@ -77,6 +88,12 @@ public class PixelmonUtilsCommand {
                 )
                 .then(Commands.literal("dialogue")
                         .executes(context -> runGetCustomDialogue(context.getSource()))
+                )
+                .then(Commands.literal("npcstare")
+                        .then(Commands.argument("entity", EntityArgument.entity())
+                                .executes(context -> runGetNpcStare(context.getSource(), EntityArgument.getEntity(context, "entity"))
+                                )
+                        )
                 )
         );
     }
@@ -105,6 +122,12 @@ public class PixelmonUtilsCommand {
                                 )
                         )
                 )
+                .then(Commands.literal("npcstare")
+                        .then(Commands.argument("entity", EntityArgument.entity())
+                                .executes(context -> runRemoveNpcStare(context.getSource(), EntityArgument.getEntity(context, "entity"))
+                                )
+                        )
+                )
         );
     }
 
@@ -120,6 +143,45 @@ public class PixelmonUtilsCommand {
                         )
                 )
         );
+    }
+
+    private static int runSetNpcStare(CommandSource source, Entity entity, BlockPos blockPos) throws CommandSyntaxException {
+        if (!(entity instanceof NPCEntity)) {
+            source.sendFailure(new StringTextComponent("Entity is not an NPC!"));
+            return 0;
+        }
+        source.sendSuccess(new StringTextComponent("Added stare behaviour to npc!"), false);
+        Vector3d pos = Vector3d.atCenterOf(blockPos);
+        NBTHelper.setStarePlace(entity, pos);
+        AIOverrideUtil.safeAddStare((NPCEntity) entity, pos);
+        return 1;
+    }
+
+    private static int runGetNpcStare(CommandSource source, Entity entity) throws CommandSyntaxException {
+        if (!(entity instanceof NPCEntity)) {
+            source.sendFailure(new StringTextComponent("Entity is not an NPC!"));
+            return 0;
+        }
+        if (!NBTHelper.hasStarePlace(entity)) {
+            source.sendFailure(new StringTextComponent("NPC has no stare location set!"));
+            return 0;
+        }
+        source.sendSuccess(new StringTextComponent(String.format("Stare Location: %s", NBTHelper.getStarePlace(entity))), false);
+        return 1;
+    }
+
+    private static int runRemoveNpcStare(CommandSource source, Entity entity) throws CommandSyntaxException {
+        if (!(entity instanceof NPCEntity)) {
+            source.sendFailure(new StringTextComponent("Entity is not an NPC!"));
+            return 0;
+        }
+        if (!NBTHelper.removeStarePlace(entity)) {
+            source.sendFailure(new StringTextComponent("NPC does not have stare location!"));
+            return 0;
+        }
+        source.sendSuccess(new StringTextComponent("Removed stare location from npc!"), false);
+        AIOverrideUtil.removeStare((NPCEntity) entity);
+        return 1;
     }
 
     private static int runNpcBattle(CommandSource source, ServerPlayerEntity playerBattler, Entity entity, boolean showscreen) throws CommandSyntaxException {
@@ -172,7 +234,7 @@ public class PixelmonUtilsCommand {
                 return 0;
             }
             String[] CustomDialogues = NBTHelper.getCustomDialogues(lookEntity);
-            source.sendSuccess(new StringTextComponent(String.format("Custom Dialogue:\n%s", FormattingHelper.formatIndexedStringList(CustomDialogues))), true);
+            source.sendSuccess(new StringTextComponent(String.format("Custom Dialogue:\n%s", FormattingHelper.formatIndexedStringList(CustomDialogues))), false);
         }
         else {
             source.sendFailure(new StringTextComponent("Entity is not NPC!"));
@@ -188,7 +250,7 @@ public class PixelmonUtilsCommand {
         }
         else if (lookEntity instanceof StatueEntity) {
             NBTHelper.appendCustomDialogue(lookEntity, customDialogue);
-            source.sendSuccess(new StringTextComponent(String.format("Added dialogue line: %s", customDialogue)), true);
+            source.sendSuccess(new StringTextComponent(String.format("Added dialogue line: %s", customDialogue)), false);
         }
         else {
             source.sendFailure(new StringTextComponent("Entity is not NPC!"));
@@ -213,7 +275,7 @@ public class PixelmonUtilsCommand {
                 return 0;
             }
             NBTHelper.removeCustomDialogue(lookEntity, index);
-            source.sendSuccess(new StringTextComponent(String.format("Removed NPC's dialogue at index %d.", index)), true);
+            source.sendSuccess(new StringTextComponent(String.format("Removed NPC's dialogue at index %d.", index)), false);
         }
         else {
             source.sendFailure(new StringTextComponent("Entity is not NPC!"));

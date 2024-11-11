@@ -13,6 +13,7 @@ import net.minecraft.util.text.TextComponentUtils;
 import net.minecraft.world.World;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.RegisterCommandsEvent;
+import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -46,6 +47,11 @@ public class EventHandler {
                 }
                 PixelmonModUtils.customNpcChat(event.getTarget(), (ServerPlayerEntity) event.getPlayer(), NBTHelper.getCustomDialogues(event.getTarget()));
             }
+        }
+
+        @SubscribeEvent
+        public static void onEntityJoinWorld(EntityJoinWorldEvent event) {
+            
         }
 
     }
