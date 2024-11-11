@@ -3,6 +3,7 @@ package supermemnon.pixelmonutils;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.pixelmonmod.pixelmon.api.events.PokeLootEvent;
 import com.pixelmonmod.pixelmon.api.events.npc.NPCEvent;
+import com.pixelmonmod.pixelmon.entities.npcs.NPCEntity;
 import com.pixelmonmod.pixelmon.entities.pixelmon.StatueEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.util.math.BlockPos;
@@ -20,10 +21,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import supermemnon.pixelmonutils.command.PixelmonUtilsCommand;
 import supermemnon.pixelmonutils.storage.PixelUtilsBlockData;
-import supermemnon.pixelmonutils.util.CommandUtils;
-import supermemnon.pixelmonutils.util.NBTHelper;
-import supermemnon.pixelmonutils.util.InventoryUtils;
-import supermemnon.pixelmonutils.util.PixelmonModUtils;
+import supermemnon.pixelmonutils.util.*;
 
 import java.util.UUID;
 
@@ -51,7 +49,10 @@ public class EventHandler {
 
         @SubscribeEvent
         public static void onEntityJoinWorld(EntityJoinWorldEvent event) {
-            
+            if (!(event.getEntity() instanceof NPCEntity) || !NBTHelper.hasStarePlace(event.getEntity())){
+                return;
+            }
+            AIOverrideUtil.addStare((NPCEntity) event.getEntity(), NBTHelper.getStarePlace(event.getEntity()));
         }
 
     }
