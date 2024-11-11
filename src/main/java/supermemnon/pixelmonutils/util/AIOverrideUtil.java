@@ -63,12 +63,10 @@ public class AIOverrideUtil {
         }
 
         private boolean handlePlayerCheck() {
-            selfRef.level.getServer().sendMessage(new StringTextComponent("Checking for player target!"),Util.NIL_UUID);
             for (PlayerEntity player : (this.selfRef.level.getNearbyPlayers(EntityPredicate.DEFAULT, null,
                     new AxisAlignedBB(selfRef.getX()+detectionRadius,selfRef.getY()+detectionRadius,selfRef.getZ()+detectionRadius,
                             selfRef.getX()-detectionRadius,selfRef.getY()-detectionRadius,selfRef.getZ()-detectionRadius)))) {
                 nearTarget = player;
-                selfRef.level.getServer().sendMessage(new StringTextComponent("Found player target!"),Util.NIL_UUID);
                 return true;
             }
             nearTarget = null;
@@ -120,12 +118,10 @@ public class AIOverrideUtil {
         }
 
         private boolean handlePlayerCheck() {
-            selfRef.level.getServer().sendMessage(new StringTextComponent("Checking for player target!"),Util.NIL_UUID);
             for (PlayerEntity player : (this.selfRef.level.getNearbyPlayers(EntityPredicate.DEFAULT, null,
                     new AxisAlignedBB(selfRef.getX()+detectionRadius,selfRef.getY()+detectionRadius,selfRef.getZ()+detectionRadius,
                             selfRef.getX()-detectionRadius,selfRef.getY()-detectionRadius,selfRef.getZ()-detectionRadius)))) {
                 nearTarget = player;
-                selfRef.level.getServer().sendMessage(new StringTextComponent("Found player target!"),Util.NIL_UUID);
                 return true;
             }
             nearTarget = null;
@@ -149,12 +145,10 @@ public class AIOverrideUtil {
                 updateCooldown--;
                 return false;
             }
-            selfRef.level.getServer().sendMessage(new StringTextComponent("Checking for stare target!"),Util.NIL_UUID);
             if (!findStareTarget()){
                 updateCooldown = updateCooldownMax;
                 return false;
             }
-            selfRef.level.getServer().sendMessage(new StringTextComponent("Found Stare target!"),Util.NIL_UUID);
             return true;
         }
 
