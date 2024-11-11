@@ -13,16 +13,19 @@ Base command is `/pixelmonutils` which has the subcommands `get`, `set`, `remove
 * `requireditem` to show an indexed list of required items on an NPC.
 * `pokelootcommand` `[xyz]` to show an indexed list of commands to execute on a pokechest loot block.
 * `dialogue` to show an indexed list of dialogue on a Statue.
+* `npcstare` `<entityuuid>` to show the npc's current staring position.
 
 `set` has the subcommands:
 * `requireditem` to add the item in hand as a required item to interact or battle with the NPC.
 * `pokelootcommand` `[xyz]` `command` to add a command to execute at the pokechest at XYZ coordinate.
 * `dialogue` `<dialogue>` to add a line of dialogue to a Statue upon interaction.
+* `stare` `<entityuuid>` `[xyz]` to set a position which the NPC will stare at when a player approaches within 8 blocks.
 
 `remove` has the subcommands:
 * `requireditem`
 * `pokelootcommand` `[xyz]`
 * `dialogue`
+* `npcstare` `<entityuuid>`
 
 `npcbattle` takes a player selector and entity selector (must be an npc trainer) and lastly a true/false for whether to show the rules screen.
 Then, it prompts the player into a battle against the NPC trainer.
