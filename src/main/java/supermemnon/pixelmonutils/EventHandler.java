@@ -20,6 +20,7 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import supermemnon.pixelmonutils.command.PixelmonUtilsCommand;
+import supermemnon.pixelmonutils.command.SpectateOverride;
 import supermemnon.pixelmonutils.storage.PixelUtilsBlockData;
 import supermemnon.pixelmonutils.util.*;
 
@@ -35,6 +36,7 @@ public class EventHandler {
         @SubscribeEvent
         public static void registerCommands(RegisterCommandsEvent event) {
             PixelmonUtilsCommand.register(event.getDispatcher());
+            new SpectateOverride(event.getDispatcher());
         }
 
         @SubscribeEvent

@@ -8,7 +8,10 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.pixelmonmod.pixelmon.api.pokemon.Pokemon;
 import com.pixelmonmod.pixelmon.api.storage.StorageProxy;
+import com.pixelmonmod.pixelmon.battles.BattleRegistry;
 import com.pixelmonmod.pixelmon.battles.api.rules.teamselection.TeamSelectionRegistry;
+import com.pixelmonmod.pixelmon.battles.controller.BattleController;
+import com.pixelmonmod.pixelmon.battles.controller.participants.Spectator;
 import com.pixelmonmod.pixelmon.blocks.tileentity.PokeChestTileEntity;
 import com.pixelmonmod.pixelmon.entities.npcs.NPCEntity;
 import com.pixelmonmod.pixelmon.entities.npcs.NPCTrainer;
@@ -31,6 +34,8 @@ import supermemnon.pixelmonutils.util.AIOverrideUtil;
 import supermemnon.pixelmonutils.util.NBTHelper;
 import supermemnon.pixelmonutils.util.FormattingHelper;
 import supermemnon.pixelmonutils.util.RayTraceHelper;
+
+import java.util.Collection;
 
 public class PixelmonUtilsCommand {
     public static void register(CommandDispatcher<CommandSource> dispatcher) {
