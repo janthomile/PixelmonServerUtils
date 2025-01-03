@@ -8,10 +8,10 @@ public class SpectateOverride extends SpectateCommand {
     public SpectateOverride(CommandDispatcher<CommandSource> dispatcher) {
         super(dispatcher);
     }
-    public String getName() {
-        return "spectatebattle";
-    }
-    public String getUsage(CommandSource sender) {
-        return "/spectatebattle <playerName>";
-    }
+//    public String getName() {
+//        return "spectatebattle";
+//    }
+//    public String getUsage(CommandSource sender) {
+//        return "/spectatebattle <playerName>";
+//    }
 }

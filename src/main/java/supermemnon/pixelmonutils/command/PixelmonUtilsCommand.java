@@ -13,9 +13,11 @@ import com.pixelmonmod.pixelmon.battles.api.rules.teamselection.TeamSelectionReg
 import com.pixelmonmod.pixelmon.battles.controller.BattleController;
 import com.pixelmonmod.pixelmon.battles.controller.participants.Spectator;
 import com.pixelmonmod.pixelmon.blocks.tileentity.PokeChestTileEntity;
+import com.pixelmonmod.pixelmon.command.impl.SpectateCommand;
 import com.pixelmonmod.pixelmon.entities.npcs.NPCEntity;
 import com.pixelmonmod.pixelmon.entities.npcs.NPCTrainer;
 import com.pixelmonmod.pixelmon.entities.pixelmon.StatueEntity;
+import net.minecraft.command.CommandException;
 import net.minecraft.command.CommandSource;
 import net.minecraft.command.Commands;
 import net.minecraft.command.arguments.BlockPosArgument;
@@ -38,13 +40,18 @@ import supermemnon.pixelmonutils.util.RayTraceHelper;
 import java.util.Collection;
 
 public class PixelmonUtilsCommand {
+
+    public static  SpectateOverride spectateOverride;
+
     public static void register(CommandDispatcher<CommandSource> dispatcher) {
+        spectateOverride = new SpectateOverride(dispatcher);
+
         LiteralArgumentBuilder<CommandSource> commandStructure = Commands.literal("pixelmonutils").requires(source -> source.hasPermission(2));
         commandStructure = appendSetCommand(commandStructure);
         commandStructure = appendGetCommand(commandStructure);
         commandStructure = appendRemoveCommand(commandStructure);
         commandStructure = appendNPCBattleCommand(commandStructure);
-
+        commandStructure = appendBetterSpectate(commandStructure);
         dispatcher.register(commandStructure);
     }
 
@@ -148,6 +155,22 @@ public class PixelmonUtilsCommand {
                         )
                 )
         );
+    }
+
+    private static LiteralArgumentBuilder<CommandSource> appendBetterSpectate(LiteralArgumentBuilder<CommandSource> command) {
+        return command.then(Commands.literal("betterspectate")
+                    .then(Commands.argument("target", EntityArgument.player())
+                            .executes(context -> runBetterSpectate(context.getSource(),
+                                    EntityArgument.getPlayer(context, "target"))
+                            )
+                    )
+        );
+    }
+
+    private static int runBetterSpectate(CommandSource source, ServerPlayerEntity target) throws CommandException {
+        String[] targetInput = new String[]{target.getScoreboardName()};
+        spectateOverride.execute(source, targetInput);
+        return 1;
     }
 
     private static int runSetNpcStare(CommandSource source, Entity entity, BlockPos blockPos) throws CommandSyntaxException {

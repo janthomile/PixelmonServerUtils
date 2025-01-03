@@ -36,7 +36,6 @@ public class EventHandler {
         @SubscribeEvent
         public static void registerCommands(RegisterCommandsEvent event) {
             PixelmonUtilsCommand.register(event.getDispatcher());
-            new SpectateOverride(event.getDispatcher());
         }
 
         @SubscribeEvent
