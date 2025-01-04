@@ -17,11 +17,14 @@ import net.minecraft.world.World;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
+import net.minecraftforge.event.entity.living.LivingDamageEvent;
+import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import org.apache.logging.log4j.Level;
 import supermemnon.pixelmonutils.command.PixelmonUtilsCommand;
 import supermemnon.pixelmonutils.command.SpectateOverride;
 import supermemnon.pixelmonutils.storage.PixelUtilsBlockData;
@@ -33,6 +36,7 @@ import java.util.UUID;
 //@Mod.EventBusSubscriber(modid = "pixelmonperms")
 
 public class EventHandler {
+    public static final String nbtAntiSuffociate = "antiSuffocate";
 
     @Mod.EventBusSubscriber(modid = "pixelmonutils", bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.DEDICATED_SERVER)
     public static class ForgeEvents {
@@ -59,10 +63,20 @@ public class EventHandler {
             AIOverrideUtil.addStare((NPCEntity) event.getEntity(), NBTHelper.getStarePlace(event.getEntity()));
         }
 
-        @SubscribeEvent
+        @SubscribeEvent(priority = EventPriority.HIGHEST)
         public static void onLivingHurt(LivingHurtEvent event) {
-            if (event.getSource() == DamageSource.IN_WALL && event.getEntityLiving() instanceof PixelmonEntity) {
+            if ((event.getSource() == DamageSource.IN_WALL || event.getSource() == DamageSource.DROWN) && (event.getEntityLiving() instanceof PixelmonEntity)) {
                 event.setCanceled(true);
+                event.getEntity().setSilent(true);
+                event.getEntity().getPersistentData().putBoolean(nbtAntiSuffociate, true);
+            }
+        }
+
+        @SubscribeEvent(priority = EventPriority.HIGHEST)
+        public static void onLivingUpdate(LivingEvent.LivingUpdateEvent event) {
+            if ((event.getEntity() instanceof PixelmonEntity) && event.getEntity().getPersistentData().getBoolean(nbtAntiSuffociate)) {
+                event.getEntity().setSilent(false);
+                event.getEntity().getPersistentData().remove(nbtAntiSuffociate);
             }
         }
 
