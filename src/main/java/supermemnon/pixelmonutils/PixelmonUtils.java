@@ -9,6 +9,7 @@ import net.minecraftforge.server.permission.DefaultPermissionLevel;
 import net.minecraftforge.server.permission.PermissionAPI;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import supermemnon.pixelmonutils.command.PixelmonUtilsCommand;
 
 // The value here should match an entry in the META-INF/mods.toml file
 @Mod("pixelmonutils")
@@ -34,6 +35,7 @@ public class PixelmonUtils
 
     private void setup(final FMLCommonSetupEvent event)
     {
-        PermissionAPI.registerNode("pixelmonutils.iteminteract.entity", DefaultPermissionLevel.NONE, "");
+//        PermissionAPI.registerNode("pixelmonutils.iteminteract.entity", DefaultPermissionLevel.NONE, "");
+        PermissionAPI.registerNode(PixelmonUtilsCommand.permissionSpectate, DefaultPermissionLevel.OP, "");
     }
 }

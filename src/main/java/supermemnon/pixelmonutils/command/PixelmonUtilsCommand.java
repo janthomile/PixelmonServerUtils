@@ -6,13 +6,23 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.pixelmonmod.pixelmon.Pixelmon;
+import com.pixelmonmod.pixelmon.api.battles.BattleType;
+import com.pixelmonmod.pixelmon.api.command.PixelmonCommandUtils;
+import com.pixelmonmod.pixelmon.api.events.battles.SpectateEvent;
 import com.pixelmonmod.pixelmon.api.pokemon.Pokemon;
 import com.pixelmonmod.pixelmon.api.storage.StorageProxy;
+import com.pixelmonmod.pixelmon.api.util.helpers.NetworkHelper;
 import com.pixelmonmod.pixelmon.battles.BattleRegistry;
+import com.pixelmonmod.pixelmon.battles.api.rules.BattleRuleRegistry;
 import com.pixelmonmod.pixelmon.battles.api.rules.teamselection.TeamSelectionRegistry;
 import com.pixelmonmod.pixelmon.battles.controller.BattleController;
+import com.pixelmonmod.pixelmon.battles.controller.participants.PixelmonWrapper;
+import com.pixelmonmod.pixelmon.battles.controller.participants.PlayerParticipant;
 import com.pixelmonmod.pixelmon.battles.controller.participants.Spectator;
 import com.pixelmonmod.pixelmon.blocks.tileentity.PokeChestTileEntity;
+import com.pixelmonmod.pixelmon.client.gui.battles.PixelmonClientData;
+import com.pixelmonmod.pixelmon.comm.packetHandlers.battles.*;
 import com.pixelmonmod.pixelmon.command.impl.SpectateCommand;
 import com.pixelmonmod.pixelmon.entities.npcs.NPCEntity;
 import com.pixelmonmod.pixelmon.entities.npcs.NPCTrainer;
@@ -28,6 +38,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.fml.server.ServerLifecycleHooks;
@@ -37,9 +48,13 @@ import supermemnon.pixelmonutils.util.NBTHelper;
 import supermemnon.pixelmonutils.util.FormattingHelper;
 import supermemnon.pixelmonutils.util.RayTraceHelper;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 
 public class PixelmonUtilsCommand {
+
+    public static final String permissionSpectate = "pixelmonutils.spectate";
 
     public static  SpectateOverride spectateOverride;
 
@@ -159,19 +174,77 @@ public class PixelmonUtilsCommand {
 
     private static LiteralArgumentBuilder<CommandSource> appendBetterSpectate(LiteralArgumentBuilder<CommandSource> command) {
         return command.then(Commands.literal("betterspectate")
-                    .then(Commands.argument("target", EntityArgument.player())
-                            .executes(context -> runBetterSpectate(context.getSource(),
-                                    EntityArgument.getPlayer(context, "target"))
+                    .then(Commands.argument("audience", EntityArgument.players())
+                            .then(Commands.argument("target", EntityArgument.player())
+                                .executes(context -> runBetterSpectate(context.getSource(),
+                                        EntityArgument.getPlayers(context, "audience"),
+                                        EntityArgument.getPlayer(context, "target"))
+                                )
                             )
                     )
         );
     }
 
-    private static int runBetterSpectate(CommandSource source, ServerPlayerEntity target) throws CommandException {
-        String[] targetInput = new String[]{target.getScoreboardName()};
-        spectateOverride.execute(source, targetInput);
+//    private static int runBetterSpectate(CommandSource source, ServerPlayerEntity target) throws CommandException {
+//        String[] targetInput = new String[]{target.getScoreboardName()};
+//        spectateOverride.executeOverride(source, targetInput);
+//        return 1;
+//    }
+    private static int runBetterSpectate(CommandSource source, Collection<ServerPlayerEntity> audience, ServerPlayerEntity target) throws CommandException, CommandSyntaxException {
+//        ServerPlayerEntity player = source.getPlayerOrException();
+        if (target == null) {
+            for (ServerPlayerEntity player : audience) {
+                BattleRegistry.removeSpectator(player);
+                NetworkHelper.sendPacket(new EndSpectatePacket(), player);
+            }
+            return 0;
+        }
+
+        for (ServerPlayerEntity player : audience) {
+            if (target == player) {
+                source.sendFailure(new StringTextComponent("You can't spectate yourself!"));
+                return 0;
+            }
+
+            if (BattleRegistry.getBattle(player) != null) {
+                source.sendFailure(new StringTextComponent("You can't spectate while battling!"));
+                return 0;
+            }
+
+            BattleController base = BattleRegistry.getBattle(target);
+
+            if (base == null) {
+                source.sendFailure(new StringTextComponent("The target is not in a battle!"));
+                return 0;
+            }
+
+            PlayerParticipant watchedPlayer = base.getPlayer(target.getScoreboardName());
+
+            if (watchedPlayer == null) {
+                source.sendFailure(new StringTextComponent("An error occurred while executing this command."));
+                return 0;
+            }
+
+            if (!Pixelmon.EVENT_BUS.post(new SpectateEvent.StartSpectate(player, base, target))) {
+//                sender.func_197022_f().field_70144_Y = 1.0F; //Normally this sets collision reduction but I don't see a mapping for it on regular forge...
+
+                NetworkHelper.sendPacket(new StartBattlePacket(base.battleIndex, base.getBattleType(watchedPlayer), base.rules), player);
+                NetworkHelper.sendPacket(new SetAllBattlingPokemonPacket(PixelmonClientData.convertToGUI(Arrays.asList(watchedPlayer.allPokemon)), true), player);
+                ArrayList<PixelmonWrapper> teamList = watchedPlayer.getTeamPokemonList();
+                NetworkHelper.sendPacket(new SetBattlingPokemonPacket(teamList), player);
+                NetworkHelper.sendPacket(new SetPokemonBattleDataPacket(PixelmonClientData.convertToGUI(teamList), false), player);
+                NetworkHelper.sendPacket(new SetPokemonBattleDataPacket(watchedPlayer.getOpponentData(), true), player);
+                if (base.getTeam(watchedPlayer).size() > 1) {
+                    NetworkHelper.sendPacket(new SetPokemonTeamDataPacket(watchedPlayer.getAllyData()), player);
+                }
+
+                NetworkHelper.sendPacket(new StartSpectatePacket(watchedPlayer.player.getUUID(), (BattleType)base.rules.getOrDefault(BattleRuleRegistry.BATTLE_TYPE)), player);
+                base.addSpectator(new Spectator(player, target.getScoreboardName()));
+            }
+        }
         return 1;
     }
+
 
     private static int runSetNpcStare(CommandSource source, Entity entity, BlockPos blockPos) throws CommandSyntaxException {
         if (!(entity instanceof NPCEntity)) {
