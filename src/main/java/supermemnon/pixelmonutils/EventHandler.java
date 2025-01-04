@@ -4,8 +4,10 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.pixelmonmod.pixelmon.api.events.PokeLootEvent;
 import com.pixelmonmod.pixelmon.api.events.npc.NPCEvent;
 import com.pixelmonmod.pixelmon.entities.npcs.NPCEntity;
+import com.pixelmonmod.pixelmon.entities.pixelmon.PixelmonEntity;
 import com.pixelmonmod.pixelmon.entities.pixelmon.StatueEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.util.DamageSource;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
@@ -15,6 +17,7 @@ import net.minecraft.world.World;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
+import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -55,6 +58,14 @@ public class EventHandler {
             }
             AIOverrideUtil.addStare((NPCEntity) event.getEntity(), NBTHelper.getStarePlace(event.getEntity()));
         }
+
+        @SubscribeEvent
+        public static void onLivingHurt(LivingHurtEvent event) {
+            if (event.getSource() == DamageSource.IN_WALL && event.getEntityLiving() instanceof PixelmonEntity) {
+                event.setCanceled(true);
+            }
+        }
+
 
     }
 
