@@ -5,6 +5,7 @@ Server-side design utilities for pixelmon. Made for forge 1.16.5.
 * Add dialogue to Pixelmon Statues when you interact with them!
 * Assign commands to pokeloot that execute when they are claimed!
 * Set required items in the inventory of players to interact with NPCs or battle Trainers!
+* Pixelmon will no longer suffocate in walls!
 
 ## Commands:
 Base command is `/pixelmonutils` which has the subcommands `get`, `set`, `remove`, `npcbattle`, or `betterspectate`.
