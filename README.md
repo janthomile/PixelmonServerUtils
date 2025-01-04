@@ -7,7 +7,7 @@ Server-side design utilities for pixelmon. Made for forge 1.16.5.
 * Set required items in the inventory of players to interact with NPCs or battle Trainers!
 
 ## Commands:
-Base command is `/pixelmonutils` which has the subcommands `get`, `set`, `remove`, or `npcbattle`.
+Base command is `/pixelmonutils` which has the subcommands `get`, `set`, `remove`, `npcbattle`, or `betterspectate`.
 
 `get` has the subcommands:
 * `requireditem` to show an indexed list of required items on an NPC.
@@ -32,7 +32,11 @@ The above `set` and `remove` must be followed by a whole-number `index` (seen th
 `npcbattle` takes a player selector and entity selector (must be an npc trainer) and lastly a true/false for whether to show the rules screen.
 Then, it prompts the player into a battle against the NPC trainer.
 
-`spectatebattle` is a remap to Pixelmon's `/spectate` command which can have issues overlapping with vanilla 1.16.5's `/spectate` command.
+`betterspectate` takes a group player selector, `<audience>` (`<username>`, `@a`, `@p`, etc...), and a player target selector, `<target>`, and makes the group spectate the target's battle.
+
+## Remaps
+
+`/spectatebattle` is a remap to Pixelmon's `/spectate` command which can have issues overlapping with vanilla 1.16.5's `/spectate` command.
 
 Command addendum:
 * NPCs and Statues are targeted by looking at them in-game.
