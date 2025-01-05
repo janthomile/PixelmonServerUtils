@@ -218,10 +218,10 @@ public class PixelmonUtilsCommand {
                 return 0;
             }
 
-            PlayerParticipant watchedPlayer = base.getPlayer(target.getScoreboardName());
+            PlayerParticipant watchedPlayer = base.getPlayer(target);
 
             if (watchedPlayer == null) {
-                source.sendFailure(new StringTextComponent("An error occurred while executing this command."));
+                source.sendFailure(new StringTextComponent("Error: Target Null."));
                 return 0;
             }
 
@@ -239,7 +239,7 @@ public class PixelmonUtilsCommand {
                 }
 
                 NetworkHelper.sendPacket(new StartSpectatePacket(watchedPlayer.player.getUUID(), (BattleType)base.rules.getOrDefault(BattleRuleRegistry.BATTLE_TYPE)), player);
-                base.addSpectator(new Spectator(player, target.getScoreboardName()));
+                base.addSpectator(new Spectator(player, target.getName().toString()));
             }
         }
         return 1;
