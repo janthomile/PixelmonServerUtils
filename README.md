@@ -35,6 +35,8 @@ Then, it prompts the player into a battle against the NPC trainer.
 
 `betterspectate` takes a group player selector, `<audience>` (`<username>`, `@a`, `@p`, etc...), and a player target selector, `<target>`, and makes the group spectate the target's battle.
 
+`customrules` takes an npc selector, usually by UUID, (`npc`), followed by `clause`, then `get`, `set`, or `remove`. `set` or `remove` are followed by an actual `<clause>` as suggested by tab autocomplete.
+
 ## Remaps
 
 `/spectatebattle` is a remap to Pixelmon's `/spectate` command which can have issues overlapping with vanilla 1.16.5's `/spectate` command.
