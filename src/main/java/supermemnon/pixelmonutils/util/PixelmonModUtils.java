@@ -1,6 +1,10 @@
 package supermemnon.pixelmonutils.util;
 
+import com.pixelmonmod.pixelmon.api.battles.attack.AttackRegistry;
 import com.pixelmonmod.pixelmon.api.dialogue.Dialogue;
+import com.pixelmonmod.pixelmon.battles.api.rules.BattleRuleRegistry;
+import com.pixelmonmod.pixelmon.battles.api.rules.clauses.BattleClauseRegistry;
+import com.pixelmonmod.pixelmon.battles.api.rules.clauses.type.MoveClause;
 import com.pixelmonmod.pixelmon.entities.npcs.NPCEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.ServerPlayerEntity;
@@ -29,4 +33,16 @@ public class PixelmonModUtils {
         }
         Dialogue.setPlayerDialogueData(player, dialogues, true);
     }
+
+    public static class CustomRegistry {
+        public static final String PERISH_CLAUSE_NAME = "perish";
+        public static String[] getClauses() {
+            return new String[]{PERISH_CLAUSE_NAME};
+//            BattleClauseRegistry.getClauseList();
+        }
+        public static void registerCustomRules() {
+            BattleClauseRegistry.register(new MoveClause(PERISH_CLAUSE_NAME, true, AttackRegistry.PERISH_SONG));
+        }
+    }
+
 }

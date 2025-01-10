@@ -5,7 +5,11 @@ import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.suggestion.SuggestionProvider;
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import com.pixelmonmod.pixelmon.Pixelmon;
 import com.pixelmonmod.pixelmon.api.battles.BattleType;
 import com.pixelmonmod.pixelmon.api.command.PixelmonCommandUtils;
@@ -34,6 +38,9 @@ import net.minecraft.command.arguments.BlockPosArgument;
 import net.minecraft.command.arguments.EntityArgument;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.ListNBT;
+import net.minecraft.nbt.StringNBT;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.vector.Vector3d;
@@ -41,22 +48,27 @@ import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
+import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.fml.server.ServerLifecycleHooks;
 import supermemnon.pixelmonutils.storage.PixelUtilsBlockData;
-import supermemnon.pixelmonutils.util.AIOverrideUtil;
-import supermemnon.pixelmonutils.util.NBTHelper;
-import supermemnon.pixelmonutils.util.FormattingHelper;
-import supermemnon.pixelmonutils.util.RayTraceHelper;
+import supermemnon.pixelmonutils.util.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 
 public class PixelmonUtilsCommand {
 
     public static final String permissionSpectate = "pixelmonutils.spectate";
-
     public static  SpectateOverride spectateOverride;
+    enum OPERAND {
+        GET,
+        SET,
+        REMOVE
+    }
 
     public static void register(CommandDispatcher<CommandSource> dispatcher) {
         spectateOverride = new SpectateOverride(dispatcher);
@@ -67,6 +79,7 @@ public class PixelmonUtilsCommand {
         commandStructure = appendRemoveCommand(commandStructure);
         commandStructure = appendNPCBattleCommand(commandStructure);
         commandStructure = appendBetterSpectate(commandStructure);
+        commandStructure = appendCustomRules(commandStructure);
         dispatcher.register(commandStructure);
     }
 
@@ -183,6 +196,65 @@ public class PixelmonUtilsCommand {
                             )
                     )
         );
+    }
+
+    private static LiteralArgumentBuilder<CommandSource> appendCustomRules(LiteralArgumentBuilder<CommandSource> command) {
+        return command.then(Commands.literal("customrules")
+                        .then(Commands.argument("npc", EntityArgument.entity())
+                                .then(Commands.literal("clause")
+                                        .then(Commands.literal("get")
+                                                .executes(context -> runCustomRules(context.getSource(), EntityArgument.getEntity(context, "npc"),"", OPERAND.GET))
+                                        )
+                                        .then(Commands.literal("set")
+                                                .then(Commands.argument("<clause>", StringArgumentType.string())
+                                                        .suggests((context, builder) -> getSuggestionsFromList(builder, PixelmonModUtils.CustomRegistry.getClauses()))
+                                                        .executes(context -> runCustomRules(context.getSource(), EntityArgument.getEntity(context, "npc"), StringArgumentType.getString(context, "<clause>"), OPERAND.SET))
+                                                )
+                                        )
+                                        .then(Commands.literal("remove")
+                                                .then(Commands.argument("<clause>", StringArgumentType.string())
+                                                        .suggests((context, builder) -> getSuggestionsFromList(builder, PixelmonModUtils.CustomRegistry.getClauses()))
+                                                        .executes(context -> runCustomRules(context.getSource(), EntityArgument.getEntity(context, "npc"), StringArgumentType.getString(context, "<clause>"), OPERAND.REMOVE))
+                                                )
+                                        )
+                                )
+                        )
+        );
+    }
+
+    private static int runCustomRules(CommandSource source, Entity npc, String clause, OPERAND operand) {
+        if (!(npc instanceof NPCTrainer)) {
+            source.sendFailure(new StringTextComponent("Entity is not an NPC Trainer!"));
+            return 0;
+        }
+        CompoundNBT nbt = npc.getPersistentData();
+        ListNBT clauseList = nbt.getList("Clauses", Constants.NBT.TAG_STRING);
+        switch (operand) {
+            case GET: {
+                source.sendSuccess(new StringTextComponent(String.format("Trainer %s has the following Clauses:\n%s", Arrays.toString(FormattingHelper.formatNbtStringList(clauseList)), clauseList.getAsString())), false);
+                source.sendSuccess(new StringTextComponent(String.format("\tClause Info:\n%s\n%s", nbt.getAsString(), clauseList.getAsString())), false);
+                break;
+            }
+            case SET: {
+                if (clauseList.contains(clause)) {
+                    source.sendFailure(new StringTextComponent(String.format("Trainer %s already has the clause %s.", npc.getName().getString(), clause)));
+                    return 0;
+                }
+                clauseList.add(Constants.NBT.TAG_STRING, StringNBT.valueOf(clause));
+                source.sendSuccess(new StringTextComponent(String.format("Added %s clause to trainer %s.", clause, npc.getName().getString())), false);
+                break;
+            }
+            case REMOVE: {
+                if (!clauseList.contains(clause)) {
+                    source.sendFailure(new StringTextComponent(String.format("Trainer %s does not have the clause %s.", npc.getName().getString(), clause)));
+                    return 0;
+                }
+                clauseList.remove(StringNBT.valueOf(clause));
+                source.sendSuccess(new StringTextComponent(String.format("Removed %s clause from trainer %s.", clause, npc.getName().getString())), false);
+                break;
+            }
+        }
+        return 1;
     }
 
 //    private static int runBetterSpectate(CommandSource source, ServerPlayerEntity target) throws CommandException {
@@ -485,4 +557,12 @@ public class PixelmonUtilsCommand {
         }
         return 1;
     }
+
+    private static CompletableFuture<Suggestions> getSuggestionsFromList(SuggestionsBuilder builder, String[] options) {
+        for (String suggestion : options) {
+            builder.suggest(suggestion);
+        }
+        return builder.buildFuture();
+    }
+
 }

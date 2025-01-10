@@ -24,6 +24,7 @@ import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.server.FMLServerStartedEvent;
 import org.apache.logging.log4j.Level;
 import supermemnon.pixelmonutils.command.PixelmonUtilsCommand;
 import supermemnon.pixelmonutils.command.SpectateOverride;
@@ -43,6 +44,11 @@ public class EventHandler {
         @SubscribeEvent
         public static void registerCommands(RegisterCommandsEvent event) {
             PixelmonUtilsCommand.register(event.getDispatcher());
+        }
+
+        @SubscribeEvent
+        public static void onServerStart(FMLServerStartedEvent even) {
+            PixelmonModUtils.CustomRegistry.registerCustomRules();
         }
 
         @SubscribeEvent
