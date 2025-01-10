@@ -1,9 +1,16 @@
 package supermemnon.pixelmonutils.util;
 
+import com.pixelmonmod.pixelmon.entities.npcs.NPCTrainer;
 import net.minecraft.entity.Entity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.INBT;
+import net.minecraft.nbt.ListNBT;
+import net.minecraft.nbt.StringNBT;
 import net.minecraft.util.math.vector.Vector3d;
+import net.minecraftforge.common.util.Constants;
+import org.apache.logging.log4j.Level;
+import supermemnon.pixelmonutils.PixelmonUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -12,6 +19,7 @@ import static net.minecraft.util.math.MathHelper.floor;
 
 public class NBTHelper {
 
+    public static String nbtCustomClauseList = "CustomClauses";
     static String nbtCustomDialogueKey = "putils_dlg";
     static String nbtRequiredItemKey = "putils_item";
     static String nbtStareLocationKey = "putils_stareplace";
@@ -149,4 +157,53 @@ public class NBTHelper {
     public static String[] parseAltList(String string) {
         return string.split(altListDelimiterRegex);
     }
+
+    public static boolean hasInStringList(ListNBT list, String value) {
+        for (INBT n : list) {
+            if (n.getAsString().equals(value)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static void removeFromStringList(ListNBT list, String value) {
+        for (int i = 0; i < list.size(); i++) {
+            if (list.get(i).getAsString().equals(value)) {
+                list.remove(i);
+                return;
+            }
+        }
+    }
+
+    public static void initCustomClause(CompoundNBT nbt) {
+//        CompoundNBT nbt = npc.getPersistentData();
+        if (nbt.contains(nbtCustomClauseList)) {return;}
+        ListNBT list = new ListNBT();
+        nbt.put(nbtCustomClauseList, list);
+    }
+
+    public static void addCustomClause(CompoundNBT nbt, String clause) {
+        if (!nbt.contains(nbtCustomClauseList)) {
+            initCustomClause(nbt);
+        }
+        nbt.getList(nbtCustomClauseList, Constants.NBT.TAG_STRING).add(0, StringNBT.valueOf(clause));
+    }
+
+    public static void removeCustomClause(CompoundNBT nbt, CompoundNBT persistent, String clause) {
+        if (!persistent.contains(nbtCustomClauseList)) {
+            return;
+        }
+        removeFromStringList(nbt.getList("Clauses", Constants.NBT.TAG_STRING), clause);
+        removeFromStringList(persistent.getList(nbtCustomClauseList, Constants.NBT.TAG_STRING), clause);
+    }
+
+    //Does not deserialize itself, this must be done outside
+    public static void refreshNPCClauses(CompoundNBT source, CompoundNBT target) {
+        if (!source.contains(nbtCustomClauseList)) {return;}
+        ListNBT list = source.getList(nbtCustomClauseList, Constants.NBT.TAG_STRING);
+        ListNBT clauseList = target.getList("Clauses", Constants.NBT.TAG_STRING);
+        clauseList.addAll(list);
+    }
+
 }

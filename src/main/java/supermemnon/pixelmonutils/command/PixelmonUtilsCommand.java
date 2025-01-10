@@ -227,41 +227,38 @@ public class PixelmonUtilsCommand {
             source.sendFailure(new StringTextComponent("Entity is not an NPC Trainer!"));
             return 0;
         }
-        CompoundNBT nbt = npc.getPersistentData();
-        ListNBT clauseList = nbt.getList("Clauses", Constants.NBT.TAG_STRING);
+        CompoundNBT nbt = npc.serializeNBT();
+        CompoundNBT persistent = npc.getPersistentData();
+        ListNBT clauseList = persistent.getList(NBTHelper.nbtCustomClauseList, Constants.NBT.TAG_STRING);
         switch (operand) {
             case GET: {
-                source.sendSuccess(new StringTextComponent(String.format("Trainer %s has the following Clauses:\n%s", Arrays.toString(FormattingHelper.formatNbtStringList(clauseList)), clauseList.getAsString())), false);
-                source.sendSuccess(new StringTextComponent(String.format("\tClause Info:\n%s\n%s", nbt.getAsString(), clauseList.getAsString())), false);
-                break;
+                source.sendSuccess(new StringTextComponent(String.format("Trainer %s has the following Clauses:\n%s", npc.getName().getString(), Arrays.toString(FormattingHelper.formatNbtStringList(clauseList)))), false);
+                return 1;
             }
             case SET: {
-                if (clauseList.contains(clause)) {
+                if (NBTHelper.hasInStringList(clauseList, clause)) {
                     source.sendFailure(new StringTextComponent(String.format("Trainer %s already has the clause %s.", npc.getName().getString(), clause)));
                     return 0;
                 }
-                clauseList.add(Constants.NBT.TAG_STRING, StringNBT.valueOf(clause));
+                NBTHelper.addCustomClause(persistent, clause);
                 source.sendSuccess(new StringTextComponent(String.format("Added %s clause to trainer %s.", clause, npc.getName().getString())), false);
                 break;
             }
             case REMOVE: {
-                if (!clauseList.contains(clause)) {
+                if (!NBTHelper.hasInStringList(clauseList, clause)) {
                     source.sendFailure(new StringTextComponent(String.format("Trainer %s does not have the clause %s.", npc.getName().getString(), clause)));
                     return 0;
                 }
-                clauseList.remove(StringNBT.valueOf(clause));
+                NBTHelper.removeCustomClause(nbt, persistent, clause);
                 source.sendSuccess(new StringTextComponent(String.format("Removed %s clause from trainer %s.", clause, npc.getName().getString())), false);
                 break;
             }
         }
+        NBTHelper.refreshNPCClauses(npc.getPersistentData(), nbt);
+        npc.deserializeNBT(nbt);
         return 1;
     }
 
-//    private static int runBetterSpectate(CommandSource source, ServerPlayerEntity target) throws CommandException {
-//        String[] targetInput = new String[]{target.getScoreboardName()};
-//        spectateOverride.executeOverride(source, targetInput);
-//        return 1;
-//    }
     private static int runBetterSpectate(CommandSource source, Collection<ServerPlayerEntity> audience, ServerPlayerEntity target) throws CommandException, CommandSyntaxException {
 //        ServerPlayerEntity player = source.getPlayerOrException();
         if (target == null) {

@@ -4,9 +4,11 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.pixelmonmod.pixelmon.api.events.PokeLootEvent;
 import com.pixelmonmod.pixelmon.api.events.npc.NPCEvent;
 import com.pixelmonmod.pixelmon.entities.npcs.NPCEntity;
+import com.pixelmonmod.pixelmon.entities.npcs.NPCTrainer;
 import com.pixelmonmod.pixelmon.entities.pixelmon.PixelmonEntity;
 import com.pixelmonmod.pixelmon.entities.pixelmon.StatueEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.ITextComponent;
@@ -67,6 +69,11 @@ public class EventHandler {
                 return;
             }
             AIOverrideUtil.addStare((NPCEntity) event.getEntity(), NBTHelper.getStarePlace(event.getEntity()));
+            if (event.getEntity() instanceof NPCTrainer) {
+                CompoundNBT nbt = event.getEntity().serializeNBT();
+                NBTHelper.refreshNPCClauses(event.getEntity().getPersistentData(), nbt);
+                event.getEntity().deserializeNBT(nbt);
+            }
         }
 
         @SubscribeEvent(priority = EventPriority.HIGHEST)

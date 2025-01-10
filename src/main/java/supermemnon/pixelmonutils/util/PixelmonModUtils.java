@@ -6,6 +6,7 @@ import com.pixelmonmod.pixelmon.battles.api.rules.BattleRuleRegistry;
 import com.pixelmonmod.pixelmon.battles.api.rules.clauses.BattleClauseRegistry;
 import com.pixelmonmod.pixelmon.battles.api.rules.clauses.type.MoveClause;
 import com.pixelmonmod.pixelmon.entities.npcs.NPCEntity;
+import com.pixelmonmod.pixelmon.entities.npcs.NPCTrainer;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 
@@ -43,6 +44,8 @@ public class PixelmonModUtils {
         public static void registerCustomRules() {
             BattleClauseRegistry.register(new MoveClause(PERISH_CLAUSE_NAME, true, AttackRegistry.PERISH_SONG));
         }
+
+
     }
 
 }
